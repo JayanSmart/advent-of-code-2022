@@ -5,67 +5,102 @@ use std::str::FromStr;
 use std::{env, io};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum Plays {
+enum Play {
     Rock,
     Paper,
     Scissor,
 }
 
-impl FromStr for Plays {
+impl FromStr for Play {
     type Err = String;
 
-    fn from_str(input: &str) -> Result<Plays, Self::Err> {
+    fn from_str(input: &str) -> Result<Play, Self::Err> {
         match input {
             // Opponent
-            "A" => Ok(Plays::Rock),
-            "B" => Ok(Plays::Paper),
-            "C" => Ok(Plays::Scissor),
-
-            // You
-            "X" => Ok(Plays::Rock),
-            "Y" => Ok(Plays::Paper),
-            "Z" => Ok(Plays::Scissor),
+            "A" => Ok(Play::Rock),
+            "B" => Ok(Play::Paper),
+            "C" => Ok(Play::Scissor),
             _ => Err("Unable to Match".parse().unwrap()),
         }
     }
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Outcome {
     Win,
     Loss,
     Draw,
 }
 
-struct Strategy {
-    you: Plays,
-    opponent: Plays,
-}
+impl FromStr for Outcome {
+    type Err = String;
 
-impl Strategy {
-    pub fn new(you: Plays, opponent: Plays) -> Self {
-        Self { you, opponent }
+    fn from_str(input: &str) -> Result<Outcome, Self::Err> {
+        match input {
+            // Opponent
+            "X" => Ok(Outcome::Loss),
+            "Y" => Ok(Outcome::Draw),
+            "Z" => Ok(Outcome::Win),
+            _ => Err("Unable to Match".parse().unwrap()),
+        }
     }
 }
 
-fn calculate_result(you: &Plays, opponent: &Plays) -> Outcome {
+struct Strategy {
+    desired_outcome: Outcome,
+    opponent: Play,
+    to_play: Play,
+}
+
+impl Strategy {
+    pub fn new(desired_outcome: Outcome, opponent: Play) -> Self {
+        Self {
+            desired_outcome,
+            opponent,
+            to_play: self::Strategy::what_to_play(desired_outcome, opponent),
+        }
+    }
+
+    fn what_to_play(desired_outcome: Outcome, opponent: Play) -> Play {
+        /// Return the Play required to achieve the desired result
+        match desired_outcome {
+            Outcome::Win => match opponent {
+                Play::Rock => Play::Paper,
+                Play::Paper => Play::Scissor,
+                Play::Scissor => Play::Rock,
+            },
+            Outcome::Draw => match opponent {
+                Play::Rock => Play::Rock,
+                Play::Paper => Play::Paper,
+                Play::Scissor => Play::Scissor,
+            },
+            Outcome::Loss => match opponent {
+                Play::Rock => Play::Scissor,
+                Play::Paper => Play::Rock,
+                Play::Scissor => Play::Paper,
+            },
+        }
+    }
+}
+
+fn calculate_result(you: &Play, opponent: &Play) -> Outcome {
     if you == opponent {
         return Outcome::Draw;
     }
 
     match you {
-        Plays::Rock => {
-            if opponent == &Plays::Paper {
+        Play::Rock => {
+            if opponent == &Play::Paper {
                 return Outcome::Loss;
             }
         }
-        Plays::Paper => {
-            if opponent == &Plays::Scissor {
+        Play::Paper => {
+            if opponent == &Play::Scissor {
                 return Outcome::Loss;
             }
         }
-        Plays::Scissor => {
-            if opponent == &Plays::Rock {
+        Play::Scissor => {
+            if opponent == &Play::Rock {
                 return Outcome::Loss;
             }
         }
@@ -74,11 +109,11 @@ fn calculate_result(you: &Plays, opponent: &Plays) -> Outcome {
     Outcome::Win
 }
 
-fn score_for_played(played: &Plays) -> i32 {
+fn score_for_played(played: &Play) -> i32 {
     match played {
-        Plays::Rock => 1,
-        Plays::Paper => 2,
-        Plays::Scissor => 3,
+        Play::Rock => 1,
+        Play::Paper => 2,
+        Play::Scissor => 3,
     }
 }
 
@@ -90,7 +125,7 @@ fn score_for_outcome(result: Outcome) -> i32 {
     }
 }
 
-fn score_for_match(you: Plays, opponent: Plays) -> i32 {
+fn score_for_match(you: Play, opponent: Play) -> i32 {
     score_for_played(&you) + score_for_outcome(calculate_result(&you, &opponent))
 }
 
@@ -113,14 +148,14 @@ fn main() {
                         /// We have to swap last and first here as I coded everything else to be
                         /// you, opponent and the input is swapped. If I do this again, swap
                         /// everything to match input order.
-                        Plays::from_str(s.last().unwrap()).unwrap(),
-                        Plays::from_str(s.first().unwrap()).unwrap(),
+                        Outcome::from_str(s.last().unwrap()).unwrap(),
+                        Play::from_str(s.first().unwrap()).unwrap(),
                     );
 
-                    let score = score_for_match(strat.you, strat.opponent);
+                    let score = score_for_match(strat.to_play, strat.opponent);
                     total_score += score;
 
-                    dbg!(count, strat.you, strat.opponent, score, total_score);
+                    dbg!(count, strat.opponent, strat.desired_outcome ,strat.to_play, score, total_score);
                 }
                 None => {}
             }
@@ -147,54 +182,60 @@ mod test {
     #[test]
     fn test_basic_game_rules() {
         //Rock
-        assert_eq!(
-            calculate_result(&Plays::Rock, &Plays::Scissor),
-            Outcome::Win
-        );
-        assert_eq!(calculate_result(&Plays::Rock, &Plays::Rock), Outcome::Draw);
-        assert_eq!(calculate_result(&Plays::Rock, &Plays::Paper), Outcome::Loss);
+        assert_eq!(calculate_result(&Play::Rock, &Play::Scissor), Outcome::Win);
+        assert_eq!(calculate_result(&Play::Rock, &Play::Rock), Outcome::Draw);
+        assert_eq!(calculate_result(&Play::Rock, &Play::Paper), Outcome::Loss);
 
         //Paper
-        assert_eq!(calculate_result(&Plays::Paper, &Plays::Rock), Outcome::Win);
+        assert_eq!(calculate_result(&Play::Paper, &Play::Rock), Outcome::Win);
+        assert_eq!(calculate_result(&Play::Paper, &Play::Paper), Outcome::Draw);
         assert_eq!(
-            calculate_result(&Plays::Paper, &Plays::Paper),
-            Outcome::Draw
-        );
-        assert_eq!(
-            calculate_result(&Plays::Paper, &Plays::Scissor),
+            calculate_result(&Play::Paper, &Play::Scissor),
             Outcome::Loss
         );
 
         //Scissor
+        assert_eq!(calculate_result(&Play::Scissor, &Play::Paper), Outcome::Win);
         assert_eq!(
-            calculate_result(&Plays::Scissor, &Plays::Paper),
-            Outcome::Win
-        );
-        assert_eq!(
-            calculate_result(&Plays::Scissor, &Plays::Scissor),
+            calculate_result(&Play::Scissor, &Play::Scissor),
             Outcome::Draw
         );
-        assert_eq!(
-            calculate_result(&Plays::Scissor, &Plays::Rock),
-            Outcome::Loss
-        );
+        assert_eq!(calculate_result(&Play::Scissor, &Play::Rock), Outcome::Loss);
     }
 
     #[test]
     fn test_match_score() {
         //Rock (1 point + outcome)
-        assert_eq!(score_for_match(Plays::Rock, Plays::Scissor), 1 + 6);
-        assert_eq!(score_for_match(Plays::Rock, Plays::Rock), 1 + 3);
-        assert_eq!(score_for_match(Plays::Rock, Plays::Paper), 1);
+        assert_eq!(score_for_match(Play::Rock, Play::Scissor), 1 + 6);
+        assert_eq!(score_for_match(Play::Rock, Play::Rock), 1 + 3);
+        assert_eq!(score_for_match(Play::Rock, Play::Paper), 1);
 
         //Paper (2 points + outcome)
-        assert_eq!(score_for_match(Plays::Paper, Plays::Rock), 2 + 6);
-        assert_eq!(score_for_match(Plays::Paper, Plays::Paper), 2 + 3);
-        assert_eq!(score_for_match(Plays::Paper, Plays::Scissor), 2);
+        assert_eq!(score_for_match(Play::Paper, Play::Rock), 2 + 6);
+        assert_eq!(score_for_match(Play::Paper, Play::Paper), 2 + 3);
+        assert_eq!(score_for_match(Play::Paper, Play::Scissor), 2);
 
         //Scissor (3 points + outcome)
-        assert_eq!(score_for_match(Plays::Scissor, Plays::Paper), 3 + 6);
-        assert_eq!(score_for_match(Plays::Scissor, Plays::Scissor), 3 + 3);
-        assert_eq!(score_for_match(Plays::Scissor, Plays::Rock), 3);
+        assert_eq!(score_for_match(Play::Scissor, Play::Paper), 3 + 6);
+        assert_eq!(score_for_match(Play::Scissor, Play::Scissor), 3 + 3);
+        assert_eq!(score_for_match(Play::Scissor, Play::Rock), 3);
+    }
+
+    #[test]
+    fn test_to_play_calculations() {
+        // To Win
+        assert_eq!(Strategy::what_to_play(Outcome::Win, Play::Rock), Play::Paper);
+        assert_eq!(Strategy::what_to_play(Outcome::Win, Play::Paper), Play::Scissor);
+        assert_eq!(Strategy::what_to_play(Outcome::Win, Play::Scissor), Play::Rock);
+
+        // To Draw
+        assert_eq!(Strategy::what_to_play(Outcome::Draw, Play::Rock), Play::Rock);
+        assert_eq!(Strategy::what_to_play(Outcome::Draw, Play::Paper), Play::Paper);
+        assert_eq!(Strategy::what_to_play(Outcome::Draw, Play::Scissor), Play::Scissor);
+
+        // To Loose
+        assert_eq!(Strategy::what_to_play(Outcome::Loss, Play::Rock), Play::Scissor);
+        assert_eq!(Strategy::what_to_play(Outcome::Loss, Play::Paper), Play::Rock);
+        assert_eq!(Strategy::what_to_play(Outcome::Loss, Play::Scissor), Play::Paper);
     }
 }
