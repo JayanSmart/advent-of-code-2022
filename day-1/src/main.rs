@@ -1,9 +1,9 @@
-use std::{env, path::Path};
 use std::cmp::Ordering;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::iter::Sum;
 use std::process::exit;
+use std::{env, path::Path};
 
 #[derive(Eq, Clone)]
 struct Elf {
@@ -62,14 +62,17 @@ fn main() {
             match line.ok() {
                 Some(cal) => {
                     if cal == "" {
-                        println!("Add Elf {}, with {} calories of food", current.id, current.calories);
+                        println!(
+                            "Add Elf {}, with {} calories of food",
+                            current.id, current.calories
+                        );
                         elves.push(current.clone());
                         current = Elf::new(current.id + 1, 0);
                     } else {
                         current.add_calories(cal.parse::<i32>().unwrap());
                     }
                 }
-                None => print!("Found Nothing!")
+                None => print!("Found Nothing!"),
             }
         }
     }
@@ -79,13 +82,16 @@ fn main() {
         exit(0)
     }
 
-    println!("The elf with the most food has {:?} calories", calculate_best_elf(&elves).calories);
+    println!(
+        "The elf with the most food has {:?} calories",
+        calculate_best_elf(&elves).calories
+    );
 
     let best_elves = calculate_best_3_elves(&elves);
-    println!("The top 3 elves have {:?} calories", best_elves.iter().map(|x| x.calories).sum::<i32>())
-
-
-
+    println!(
+        "The top 3 elves have {:?} calories",
+        best_elves.iter().map(|x| x.calories).sum::<i32>()
+    )
 }
 
 fn calculate_best_elf(elves: &Vec<Elf>) -> &Elf {
@@ -98,7 +104,10 @@ fn calculate_best_3_elves<'a>(elves: &Vec<Elf>) -> Vec<Elf> {
     sorted[0..3].to_vec()
 }
 
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>> where P: AsRef<Path>, {
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where
+    P: AsRef<Path>,
+{
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
