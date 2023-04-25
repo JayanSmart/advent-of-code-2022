@@ -2,6 +2,7 @@ use std::{env, path::Path};
 use std::cmp::Ordering;
 use std::fs::File;
 use std::io::{self, BufRead};
+use std::iter::Sum;
 use std::process::exit;
 
 #[derive(Eq, Clone)]
@@ -78,14 +79,23 @@ fn main() {
         exit(0)
     }
 
-    println!("The elf with the most food is: {:?}", calculate_best_elf(elves));
+    println!("The elf with the most food has {:?} calories", calculate_best_elf(&elves).calories);
+
+    let best_elves = calculate_best_3_elves(&elves);
+    println!("The top 3 elves have {:?} calories", best_elves.iter().map(|x| x.calories).sum::<i32>())
 
 
 
 }
 
-fn calculate_best_elf(elves: Vec<Elf>) -> i32 {
-    elves.iter().max().unwrap().calories
+fn calculate_best_elf(elves: &Vec<Elf>) -> &Elf {
+    elves.iter().max().unwrap()
+}
+
+fn calculate_best_3_elves<'a>(elves: &Vec<Elf>) -> Vec<Elf> {
+    let mut sorted = elves.clone();
+    sorted.sort_by_key(|x| -x.calories);
+    sorted[0..3].to_vec()
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>> where P: AsRef<Path>, {
