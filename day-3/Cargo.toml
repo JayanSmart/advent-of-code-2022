@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 common = { path = "../common" }
+
+[dev-dependencies]
+pretty_assertions = "1.3.0"
