@@ -1,8 +1,10 @@
+use std::{env, io};
 use std::fs::File;
 use std::io::BufRead;
 use std::path::Path;
 use std::str::FromStr;
-use std::{env, io};
+
+use common::read_lines;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Play {
@@ -155,7 +157,14 @@ fn main() {
                     let score = score_for_match(strat.to_play, strat.opponent);
                     total_score += score;
 
-                    dbg!(count, strat.opponent, strat.desired_outcome ,strat.to_play, score, total_score);
+                    dbg!(
+                        count,
+                        strat.opponent,
+                        strat.desired_outcome,
+                        strat.to_play,
+                        score,
+                        total_score
+                    );
                 }
                 None => {}
             }
@@ -166,18 +175,11 @@ fn main() {
     }
 }
 
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
-}
-
 #[cfg(test)]
 mod test {
-    use super::*;
     use pretty_assertions::assert_eq;
+
+    use super::*;
 
     #[test]
     fn test_basic_game_rules() {
@@ -224,18 +226,45 @@ mod test {
     #[test]
     fn test_to_play_calculations() {
         // To Win
-        assert_eq!(Strategy::what_to_play(Outcome::Win, Play::Rock), Play::Paper);
-        assert_eq!(Strategy::what_to_play(Outcome::Win, Play::Paper), Play::Scissor);
-        assert_eq!(Strategy::what_to_play(Outcome::Win, Play::Scissor), Play::Rock);
+        assert_eq!(
+            Strategy::what_to_play(Outcome::Win, Play::Rock),
+            Play::Paper
+        );
+        assert_eq!(
+            Strategy::what_to_play(Outcome::Win, Play::Paper),
+            Play::Scissor
+        );
+        assert_eq!(
+            Strategy::what_to_play(Outcome::Win, Play::Scissor),
+            Play::Rock
+        );
 
         // To Draw
-        assert_eq!(Strategy::what_to_play(Outcome::Draw, Play::Rock), Play::Rock);
-        assert_eq!(Strategy::what_to_play(Outcome::Draw, Play::Paper), Play::Paper);
-        assert_eq!(Strategy::what_to_play(Outcome::Draw, Play::Scissor), Play::Scissor);
+        assert_eq!(
+            Strategy::what_to_play(Outcome::Draw, Play::Rock),
+            Play::Rock
+        );
+        assert_eq!(
+            Strategy::what_to_play(Outcome::Draw, Play::Paper),
+            Play::Paper
+        );
+        assert_eq!(
+            Strategy::what_to_play(Outcome::Draw, Play::Scissor),
+            Play::Scissor
+        );
 
         // To Loose
-        assert_eq!(Strategy::what_to_play(Outcome::Loss, Play::Rock), Play::Scissor);
-        assert_eq!(Strategy::what_to_play(Outcome::Loss, Play::Paper), Play::Rock);
-        assert_eq!(Strategy::what_to_play(Outcome::Loss, Play::Scissor), Play::Paper);
+        assert_eq!(
+            Strategy::what_to_play(Outcome::Loss, Play::Rock),
+            Play::Scissor
+        );
+        assert_eq!(
+            Strategy::what_to_play(Outcome::Loss, Play::Paper),
+            Play::Rock
+        );
+        assert_eq!(
+            Strategy::what_to_play(Outcome::Loss, Play::Scissor),
+            Play::Paper
+        );
     }
 }

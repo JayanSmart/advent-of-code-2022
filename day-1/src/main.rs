@@ -1,9 +1,8 @@
 use std::cmp::Ordering;
-use std::fs::File;
-use std::io::{self, BufRead};
-use std::iter::Sum;
+use std::env;
 use std::process::exit;
-use std::{env, path::Path};
+
+use common::read_lines;
 
 #[derive(Eq, Clone)]
 struct Elf {
@@ -102,12 +101,4 @@ fn calculate_best_3_elves<'a>(elves: &Vec<Elf>) -> Vec<Elf> {
     let mut sorted = elves.clone();
     sorted.sort_by_key(|x| -x.calories);
     sorted[0..3].to_vec()
-}
-
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
 }
