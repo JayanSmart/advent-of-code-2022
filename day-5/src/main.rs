@@ -32,6 +32,12 @@ impl Stockpile {
         }
     }
 
+    pub fn add_items(&mut self, items: Vec<Item>, pile: usize) {
+        if let Some(stack) = self.piles.get_mut(pile) {
+            stack.add_items(items);
+        }
+    }
+
     pub fn initiate(&mut self, mut state: Vec<String>) {
 
         // this is the indexes of each stack. We need this to know how many stacks there are.
@@ -71,6 +77,16 @@ impl Stockpile {
         }
     }
 
+    pub fn move_stack(&mut self, from: usize, to: usize, count: usize) {
+        if let Some(from_pile) = self.piles.get_mut(from) {
+            if let Some(items) = from_pile.remove_items(count) {
+                dbg!(&items);
+                self.add_items(items, to);
+            }
+        }
+
+    }
+
     pub fn get_top_item_lables(self) -> Vec<char> {
         let mut out: Vec<char> = Vec::new();
         for pile in self.piles() {
@@ -103,6 +119,21 @@ impl Pile {
 
     pub fn remove_item(&mut self) -> Option<Item> {
         self.items.pop()
+    }
+
+    pub fn add_items(&mut self, mut items: Vec<Item>) {
+        while let Some(item) = items.pop() {
+            self.add_item(item);
+        }
+    }
+
+    pub fn remove_items(&mut self, count: usize) -> Option<Vec<Item>> {
+        let mut items: Vec<Item> = Vec::new();
+        for _ in 0..count {
+            items.push(self.items.pop().unwrap().clone());
+        }
+
+        Some(items)
     }
 }
 
@@ -141,9 +172,11 @@ fn main() {
                     let from = words.next().unwrap().parse::<usize>().unwrap() - 1; //zero index
                     let _ = words.next(); // to
                     let to = words.next().unwrap().parse::<usize>().unwrap() - 1; //zero index
-                    for _ in 0..count {
-                        stockpile.move_crate(from, to);
-                    }
+                    // for _ in 0..count {
+                    //     stockpile.move_crate(from, to);
+                    // }
+                    stockpile.move_stack(from, to, count);
+
                 } else {
                     if line == "" {
                         dbg!(&start_state);
@@ -269,6 +302,34 @@ mod test {
 
         assert_eq!(stockpile.get_pile(1).unwrap().items().first().unwrap().label, 'B');
         assert_eq!(stockpile.get_pile(1).unwrap().items().last().unwrap().label, 'A');
+    }
+
+    #[test]
+    fn test_stockpile_move_stack_preserves_order() {
+        let mut stockpile = Stockpile::new(vec![]);
+
+        let mut start_state: Vec<String> = vec![];
+        start_state.push("[B]        ".to_string());
+        start_state.push("[A]        ".to_string());
+        start_state.push(" 1   2   3".to_string());
+
+        stockpile.initiate(start_state);
+
+        assert_eq!(stockpile.get_pile(0).unwrap().items().first().unwrap().label, 'A');
+        assert_eq!(stockpile.get_pile(0).unwrap().items().last().unwrap().label, 'B');
+
+        dbg!(&stockpile);
+
+        stockpile.move_stack(0, 1, 2);
+
+        dbg!(&stockpile);
+
+        assert_eq!(stockpile.get_pile_len(0).unwrap(), 0);
+        assert_eq!(stockpile.get_pile_len(1).unwrap(), 2);
+        assert_eq!(stockpile.get_pile_len(2).unwrap(), 0);
+
+        assert_eq!(stockpile.get_pile(1).unwrap().items().first().unwrap().label, 'A');
+        assert_eq!(stockpile.get_pile(1).unwrap().items().last().unwrap().label, 'B');
     }
 
 }
